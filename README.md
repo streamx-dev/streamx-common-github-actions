@@ -4,10 +4,11 @@ This repository contains a GitHub actions used in StreamX repositories
 
 ## Create JIRA Release GitHub Action
 
-This GitHub action provides an automated way to create JIRA releases by adding release version into `fix versions` filed in JIRA issue.
-The action retrieves tasks numbers from commits since last release.
-For each task adds version from github tag preceded by repository unique prefix. 
-It is designed to run after your code has been checked out in previous workflow steps.
+
+This GitHub action is designed to automate the creation of JIRA releases. 
+It operates by adding release version details to the `fix versions` field in a JIRA issues, 
+driven by task numbers derived from commits since the previous git tag. 
+The action should be set up to run subsequent to code checkouts in the earlier workflow steps.
 
 ### Inputs
 
@@ -35,9 +36,9 @@ add following step to your GH workflow.
           releaseNamePrefix: ${{ vars.JIRA_RELEASE_NAME_PREFIX }}
 ```
 
-The secrets ATLASSIAN_CLOUD_USER ATLASSIAN_CLOUD_APIKEY ATLASSIAN_CLOUD_DOMAIN are defined on StreamX-dev organization level.
-Should be available for all repos. 
+Secrets ATLASSIAN_CLOUD_USER, ATLASSIAN_CLOUD_APIKEY, and ATLASSIAN_CLOUD_DOMAIN are defined at the StreamX-dev organization level 
+and should be accessible for all repositories without any additional configuration.
 
-Variable ATLASSIAN_CLOUD_JIRA_PROJECT is also defined on organization level. 
+The ATLASSIAN_CLOUD_JIRA_PROJECT variable is also defined at the organizational level. 
 
-Variable JIRA_RELEASE_NAME_PREFIX should be defined as unique value for each repository.
+The JIRA_RELEASE_NAME_PREFIX variable should be uniquely defined for each repository.
