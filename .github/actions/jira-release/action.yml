@@ -36,10 +36,16 @@ runs:
 
         echo "Released version: ${RELEASED_VERSION}"
 
-        PREVIOUS_VERSION=$(git describe --abbrev=0 ${RELEASED_VERSION}^ --tags)
+        PREVIOUS_VERSION=$(git describe --abbrev=0 ${RELEASED_VERSION}^ --tags 2>/dev/null) || true
         echo "Previous version: ${PREVIOUS_VERSION}"
+        
+        if [ -z "$PREVIOUS_VERSION" ]
+        then
+          COMMITS=$(git log ${RELEASED_VERSION} --pretty=format:"%s" | grep ${{ inputs.atlassianCloudJiraProject }} || true)
+        else
+          COMMITS=$(git log ${PREVIOUS_VERSION}..${RELEASED_VERSION} --pretty=format:"%s" | grep ${{ inputs.atlassianCloudJiraProject }} || true)
+        fi
 
-        COMMITS=$(git log ${PREVIOUS_VERSION}..${RELEASED_VERSION} --pretty=format:"%s" | grep ${{ inputs.atlassianCloudJiraProject }} || true)
         TICKETS=$(echo "${COMMITS}" | grep -o '${{ inputs.atlassianCloudJiraProject }}\-[0-9]\+' | sort -u | paste -sd "," - || true)
         echo "Tickets found in commit messages: ${TICKETS}"
 
