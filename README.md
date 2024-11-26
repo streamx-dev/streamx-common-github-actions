@@ -36,9 +36,9 @@ add following step to your GH workflow.
           releaseNamePrefix: ${{ vars.JIRA_RELEASE_NAME_PREFIX }}
 ```
 
-Secrets ATLASSIAN_CLOUD_USER, ATLASSIAN_CLOUD_APIKEY, and ATLASSIAN_CLOUD_DOMAIN are defined at the StreamX-dev organization level 
+Secrets `ATLASSIAN_CLOUD_USER`, `ATLASSIAN_CLOUD_APIKEY`, and `ATLASSIAN_CLOUD_DOMAIN` are defined at the StreamX-dev organization level 
 and should be accessible for all repositories without any additional configuration.
 
-The ATLASSIAN_CLOUD_JIRA_PROJECT variable is also defined at the organizational level. 
+The `ATLASSIAN_CLOUD_JIRA_PROJECT` variable is also defined at the organizational level. 
 
-The JIRA_RELEASE_NAME_PREFIX variable should be uniquely defined for each repository.
+The `JIRA_RELEASE_NAME_PREFIX` variable should be uniquely defined for each repository.
