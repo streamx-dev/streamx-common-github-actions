@@ -1,0 +1,65 @@
+name: 'Create JIRA release'
+description: 'Composite action for creating a JIRA release. The code has to be checkout in previous steps'
+
+inputs:
+  tag:
+    description: 'Tag'
+    required: false
+  atlassianCloudUser:
+    description: 'Atlassian cloud user'
+    required: true
+  atlassianCloudApiKey:
+    description: 'Atlassian cloud ApiKey'
+    required: true
+  atlassianCloudDomain:
+    description: 'Atlassian cloud domain'
+    required: true
+  atlassianCloudJiraProject:
+    description: 'JIRA project'
+    required: true
+  releaseNamePrefix:
+    description: 'JIRA release name prefix'
+    required: true
+
+
+runs:
+  using: 'composite'
+  steps:
+    - id: prepare-release
+      run: |
+        if [ -z "${{ inputs.tag }}" ]; then
+          RELEASED_VERSION=$(git describe --tags --abbrev=0)
+        else
+          RELEASED_VERSION=${{ inputs.tag }}
+          echo "Using provided tag from inputs"
+        fi  
+
+        echo "Released version: ${RELEASED_VERSION}"
+
+        PREVIOUS_VERSION=$(git describe --abbrev=0 ${RELEASED_VERSION}^ --tags 2>/dev/null) || true
+        echo "Previous version: ${PREVIOUS_VERSION}"
+        
+        if [ -z "$PREVIOUS_VERSION" ]
+        then
+          COMMITS=$(git log ${RELEASED_VERSION} --pretty=format:"%s" | grep ${{ inputs.atlassianCloudJiraProject }} || true)
+        else
+          COMMITS=$(git log ${PREVIOUS_VERSION}..${RELEASED_VERSION} --pretty=format:"%s" | grep ${{ inputs.atlassianCloudJiraProject }} || true)
+        fi
+
+        TICKETS=$(echo "${COMMITS}" | grep -o '${{ inputs.atlassianCloudJiraProject }}\-[0-9]\+' | sort -u | paste -sd "," - || true)
+        echo "Tickets found in commit messages: ${TICKETS}"
+
+        echo "RELEASE_NAME=${{ inputs.releaseNamePrefix }}-${RELEASED_VERSION}" >> $GITHUB_ENV
+        echo "TICKETS=${TICKETS}" >> $GITHUB_ENV
+      shell: sh
+
+    - name: Release Jira Version
+      uses: charpi/jira-release-actions@v1.0.2
+      with:
+        create: true
+        email: ${{ inputs.atlassianCloudUser }}
+        api_token: ${{ inputs.atlassianCloudApiKey }}
+        subdomain: ${{ inputs.atlassianCloudDomain }}
+        jira_project: ${{ inputs.atlassianCloudJiraProject }}
+        tickets: ${{ env.TICKETS }}
+        release_name: ${{ env.RELEASE_NAME }}
