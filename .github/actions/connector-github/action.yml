@@ -43,69 +43,30 @@ runs:
   env:
     STREAMX_CONNECTOR_GITHUB_VERSION: '0.0.1-SNAPSHOT'
   steps:
-    - name: Artifactory authorisation
-      if: inputs.snapshot_artifactory_token != ''
-      uses: 'google-github-actions/auth@v2'
-      with:
-        credentials_json: ${{ inputs.snapshot_artifactory_token }}
 
     - name: Download streamx-connector-github snapshot dependency
       if: inputs.snapshot_artifactory_token != ''
       shell: bash
       run: |
-        cat <<\EOF > pom.xml
-        <?xml version="1.0" encoding="UTF-8"?>
-        <project>
-          <modelVersion>4.0.0</modelVersion>
-          <groupId>dev.streamx.githhub</groupId>
-          <artifactId>streamx-connector-github-dependency-downloader</artifactId>
-          <version>0.0.1-SNAPSHOT</version>
-          <build>
-            <extensions>
-              <extension>
-                <groupId>com.google.cloud.artifactregistry</groupId>
-                <artifactId>artifactregistry-maven-wagon</artifactId>
-                <version>2.2.4</version>
-              </extension>
-            </extensions>
-          </build>
-          <repositories>
-            <repository>
-              <releases>
-                <enabled>false</enabled>
-              </releases>
-              <snapshots>
-                <enabled>true</enabled>
-              </snapshots>
-              <id>streamx-maven-snapshots</id>
-              <url>artifactregistry://europe-west1-maven.pkg.dev/streamx-releases/streamx-maven-snapshots</url>
-            </repository>
-            <repository>
-              <releases>
-                <enabled>true</enabled>
-              </releases>
-              <snapshots>
-                <enabled>false</enabled>
-              </snapshots>
-              <id>streamx-maven-releases</id>
-              <url>artifactregistry://europe-west1-maven.pkg.dev/streamx-releases/streamx-maven-releases</url>
-            </repository>
-            <repository>
-              <releases>
-                <enabled>true</enabled>
-              </releases>
-              <snapshots>
-                <enabled>false</enabled>
-              </snapshots>
-              <id>streamx-maven-public-releases</id>
-              <url>artifactregistry://europe-west1-maven.pkg.dev/streamx-releases/streamx-maven-public-releases</url>
-            </repository>
-          </repositories>
-        </project>
-        EOF
-
-        ./mvn dependency:get -f pom.xml -Dartifact=dev.streamx.githhub:streamx-connector-github:$STREAMX_CONNECTOR_GITHUB_VERSION:jar;
-        rm pom.xml;
+        if [ -f ~/.m2/settings.xml ]; then
+          if ! grep -q '<id>streamx-connector-github</id>' ~/.m2/settings.xml; then
+            sed -i.bak 's@</servers>@<server><id>streamx-maven-snapshots</id><username>${env.GITHUB_ACTOR}</username><password>${env.GITHUB_TOKEN}</password></server></servers>@' ~/.m2/settings.xml
+          fi
+        else
+          mkdir -p ~/.m2/
+           cat <<\EOF > ~/.m2/settings.xml
+           <?xml version="1.0"?>
+           <settings>
+            <servers>
+              <server>
+                <id>streamx-maven-snapshots</id>
+                <username>oauth2accesstoken</username>
+                <password>${env.SNAPSHOT_ARTIFACTORY_TOKEN}</password>
+              </server>
+            </servers>
+          </settings>
+          EOF
+        fi
 
     - name: Set up JBang
       uses: jbangdev/setup-jbang@main
@@ -118,7 +79,8 @@ runs:
           echo $'Event Inputs:\n${{ toJSON(github.event.inputs) }}'
           export JDK_JAVA_OPTIONS="-Dquarkus.profile=debug"
         fi
-        jbang --java 21 --fresh --repos 'streamx-maven-public-releases=https:://europe-west1-maven.pkg.dev/streamx-releases/streamx-maven-public-releases/' --repos 'mavencentral' dev.streamx.githhub:streamx-connector-github:$STREAMX_CONNECTOR_GITHUB_VERSION
+        jbang --java 21 --fresh --repos 'streamx-maven-public-releases=https:://europe-west1-maven.pkg.dev/streamx-releases/streamx-maven-public-releases/' --repos 'mavencentral' --repos 'streamx-maven-snapshots=https://europe-west1-maven.pkg.dev/streamx-releases/streamx-maven-snapshots/' dev.streamx.githhub:streamx-connector-github:$STREAMX_CONNECTOR_GITHUB_VERSION
       shell: bash
       env:
         JSON_INPUTS: ${{ toJSON(inputs) }}
+        SNAPSHOT_ARTIFACTORY_TOKEN: ${{ inputs.snapshot_artifactory_token }}
