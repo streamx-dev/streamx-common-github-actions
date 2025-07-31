@@ -1,0 +1,124 @@
+name: 'streamx-connector-github'
+inputs:
+  streamx-ingestion-url:
+    description: 'StreamX ingestion API endpoint URL (e.g., https://ingestion.streamx.dev).'
+    required: true
+  streamx-ingestion-token:
+    description: 'StreamX ingestion API authorisation token.'
+    required: false
+  action:
+    description: 'Name of the GH action (e.g., sync, publish, unpublish).'
+    required: true
+  channel:
+    description: 'Name of the StreamX ingestion channel.'
+    required: true
+  source-provider:
+    description: 'Specifies the provider name used to determine the ingestion data source.'
+    required: true
+  workspace:
+    description: 'Specifies the root directory for ingestion data lookup. Defaults to github.workspace.'
+    required: false
+  key:
+    description: 'Defines ingestion message key value property. Required only with unpublish action.'
+    required: false
+  type:
+    description: 'Specifies the sx:type metadata field within the ingestion message properties.'
+    required: false
+  include-patterns:
+    description: 'Defines Ant-style path patterns for filtering ingestion data (e.g., styles/*.css, scripts/*.js).'
+    required: false
+  external-resource-url:
+    description: 'URL property from where resource data is downloaded and used as ingestion data.'
+    required: false
+  debug-enabled:
+    description: 'Configuration property to enable debug log level in GitHub Actions.'
+    required: false
+    default: 'false'
+  snapshot_artifactory_token:
+    description: 'StreamX artifactory token for SNAPSHOT usage only'
+    required: false
+
+runs:
+  using: "composite"
+  env:
+    STREAMX_CONNECTOR_GITHUB_VERSION: '0.0.1-SNAPSHOT'
+  steps:
+    - name: Artifactory authorisation
+      if: inputs.snapshot_artifactory_token != ''
+      uses: 'google-github-actions/auth@v2'
+      with:
+        credentials_json: ${{ inputs.snapshot_artifactory_token }}
+
+    - name: Download streamx-connector-github snapshot dependency
+      if: inputs.snapshot_artifactory_token != ''
+      shell: bash
+      run: |
+        cat <<\EOF > pom.xml
+        <?xml version="1.0" encoding="UTF-8"?>
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+          <groupId>dev.streamx.githhub</groupId>
+          <artifactId>streamx-connector-github-dependency-downloader</artifactId>
+          <version>0.0.1-SNAPSHOT</version>
+          <build>
+            <extensions>
+              <extension>
+                <groupId>com.google.cloud.artifactregistry</groupId>
+                <artifactId>artifactregistry-maven-wagon</artifactId>
+                <version>2.2.4</version>
+              </extension>
+            </extensions>
+          </build>
+          <repositories>
+            <repository>
+              <releases>
+                <enabled>false</enabled>
+              </releases>
+              <snapshots>
+                <enabled>true</enabled>
+              </snapshots>
+              <id>streamx-maven-snapshots</id>
+              <url>artifactregistry://europe-west1-maven.pkg.dev/streamx-releases/streamx-maven-snapshots</url>
+            </repository>
+            <repository>
+              <releases>
+                <enabled>true</enabled>
+              </releases>
+              <snapshots>
+                <enabled>false</enabled>
+              </snapshots>
+              <id>streamx-maven-releases</id>
+              <url>artifactregistry://europe-west1-maven.pkg.dev/streamx-releases/streamx-maven-releases</url>
+            </repository>
+            <repository>
+              <releases>
+                <enabled>true</enabled>
+              </releases>
+              <snapshots>
+                <enabled>false</enabled>
+              </snapshots>
+              <id>streamx-maven-public-releases</id>
+              <url>artifactregistry://europe-west1-maven.pkg.dev/streamx-releases/streamx-maven-public-releases</url>
+            </repository>
+          </repositories>
+        </project>
+        EOF
+
+        ./mvn dependency:get -f pom.xml -Dartifact=dev.streamx.githhub:streamx-connector-github:$STREAMX_CONNECTOR_GITHUB_VERSION:jar;
+        rm pom.xml;
+
+    - name: Set up JBang
+      uses: jbangdev/setup-jbang@main
+
+    - name: Run the action
+      id: action
+      run: |
+        if [[ "${{ inputs.debug-enabled }}" == "true" ]]; then
+          echo $'Inputs:\n${{ toJSON(inputs) }}'
+          echo $'Event Inputs:\n${{ toJSON(github.event.inputs) }}'
+          export JDK_JAVA_OPTIONS="-Dquarkus.profile=debug"
+        fi
+        jbang --java 21 --fresh --repos 'streamx-maven-public-releases=https:://europe-west1-maven.pkg.dev/streamx-releases/streamx-maven-public-releases/' --repos 'mavencentral' dev.streamx.githhub:streamx-connector-github:$STREAMX_CONNECTOR_GITHUB_VERSION
+      shell: bash
+      env:
+        JSON_INPUTS: ${{ toJSON(inputs) }}
