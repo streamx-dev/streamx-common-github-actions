@@ -34,7 +34,7 @@ inputs:
     description: 'Configuration property to enable debug log level in GitHub Actions.'
     required: false
     default: 'false'
-  snapshot_artifactory_token:
+  snapshot-artifactory-token:
     description: 'StreamX artifactory token for SNAPSHOT usage only'
     required: false
 
@@ -45,7 +45,7 @@ runs:
   steps:
 
     - name: Download streamx-connector-github snapshot dependency
-      if: inputs.snapshot_artifactory_token != ''
+      if: inputs.snapshot-artifactory-token != ''
       shell: bash
       run: |
         if [ -f ~/.m2/settings.xml ]; then
@@ -83,4 +83,4 @@ runs:
       shell: bash
       env:
         JSON_INPUTS: ${{ toJSON(inputs) }}
-        SNAPSHOT_ARTIFACTORY_TOKEN: ${{ inputs.snapshot_artifactory_token }}
+        SNAPSHOT_ARTIFACTORY_TOKEN: ${{ inputs.snapshot-artifactory-token }}
