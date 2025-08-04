@@ -40,17 +40,14 @@ inputs:
 
 runs:
   using: "composite"
-  env:
-    STREAMX_CONNECTOR_GITHUB_VERSION: '0.0.1-SNAPSHOT'
   steps:
-
     - name: Download streamx-connector-github snapshot dependency
       if: inputs.snapshot-artifactory-token != ''
       shell: bash
       run: |
         if [ -f ~/.m2/settings.xml ]; then
           if ! grep -q '<id>streamx-connector-github</id>' ~/.m2/settings.xml; then
-            sed -i.bak 's@</servers>@<server><id>streamx-maven-snapshots</id><username>${env.GITHUB_ACTOR}</username><password>${env.GITHUB_TOKEN}</password></server></servers>@' ~/.m2/settings.xml
+            sed -i.bak 's@</servers>@<server><id>streamx-maven-snapshots</id><username>oauth2accesstoken</username><password>${env.SNAPSHOT_ARTIFACTORY_TOKEN}</password></server></servers>@' ~/.m2/settings.xml
           fi
         else
           mkdir -p ~/.m2/
@@ -79,7 +76,7 @@ runs:
           echo $'Event Inputs:\n${{ toJSON(github.event.inputs) }}'
           export JDK_JAVA_OPTIONS="-Dquarkus.profile=debug"
         fi
-        jbang --java 21 --fresh --repos 'streamx-maven-public-releases=https:://europe-west1-maven.pkg.dev/streamx-releases/streamx-maven-public-releases/' --repos 'mavencentral' --repos 'streamx-maven-snapshots=https://europe-west1-maven.pkg.dev/streamx-releases/streamx-maven-snapshots/' dev.streamx.githhub:streamx-connector-github:$STREAMX_CONNECTOR_GITHUB_VERSION
+        jbang --java 21 --fresh --repos 'streamx-maven-public-releases=https:://europe-west1-maven.pkg.dev/streamx-releases/streamx-maven-public-releases/' --repos 'mavencentral' --repos 'streamx-maven-snapshots=https://europe-west1-maven.pkg.dev/streamx-releases/streamx-maven-snapshots/' dev.streamx.githhub:streamx-connector-github:0.0.1-SNAPSHOT
       shell: bash
       env:
         JSON_INPUTS: ${{ toJSON(inputs) }}
