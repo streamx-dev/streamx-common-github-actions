@@ -51,7 +51,7 @@ runs:
         if [[ "${{ inputs.debug-enabled }}" == "true" ]]; then
           export JDK_JAVA_OPTIONS="-Dquarkus.profile=debug"
         fi
-        jbang --java 21 --fresh --repos 'streamx-maven-public-releases=https:://europe-west1-maven.pkg.dev/streamx-releases/streamx-maven-public-releases/' --repos 'mavencentral' dev.streamx:streamx-connector-github:1.0.0
+        jbang --java 21 --fresh --repos 'streamx-maven-public-releases=https://europe-west1-maven.pkg.dev/streamx-releases/streamx-maven-public-releases/' --repos 'mavencentral' dev.streamx:streamx-connector-github:1.0.0
       shell: bash
       env:
         JSON_INPUTS: ${{ toJSON(inputs) }}
