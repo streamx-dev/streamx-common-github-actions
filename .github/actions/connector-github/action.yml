@@ -41,29 +41,6 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Download streamx-connector-github snapshot dependency
-      if: inputs.snapshot-artifactory-token != ''
-      shell: bash
-      run: |
-        if [ -f ~/.m2/settings.xml ]; then
-          if ! grep -q '<id>streamx-maven-snapshots</id>' ~/.m2/settings.xml; then
-            sed -i.bak 's@</servers>@<server><id>streamx-maven-snapshots</id><username>oauth2accesstoken</username><password>${env.SNAPSHOT_ARTIFACTORY_TOKEN}</password></server></servers>@' ~/.m2/settings.xml
-          fi
-        else
-          mkdir -p ~/.m2/
-          cat <<\EOF > ~/.m2/settings.xml
-        <?xml version="1.0"?>
-        <settings>
-          <servers>
-            <server>
-              <id>streamx-maven-snapshots</id>
-              <username>oauth2accesstoken</username>
-              <password>${env.SNAPSHOT_ARTIFACTORY_TOKEN}</password>
-            </server>
-          </servers>
-        </settings>
-        EOF
-        fi
 
     - name: Set up JBang
       uses: jbangdev/setup-jbang@main
@@ -72,12 +49,9 @@ runs:
       id: action
       run: |
         if [[ "${{ inputs.debug-enabled }}" == "true" ]]; then
-          echo $'Inputs:\n${{ toJSON(inputs) }}'
-          echo $'Event Inputs:\n${{ toJSON(github.event.inputs) }}'
           export JDK_JAVA_OPTIONS="-Dquarkus.profile=debug"
         fi
-        jbang --java 21 --fresh --repos 'streamx-maven-public-releases=https:://europe-west1-maven.pkg.dev/streamx-releases/streamx-maven-public-releases/' --repos 'mavencentral' --repos 'streamx-maven-snapshots=https://europe-west1-maven.pkg.dev/streamx-releases/streamx-maven-snapshots/' dev.streamx.githhub:streamx-connector-github:0.0.1-SNAPSHOT
+        jbang --java 21 --fresh --repos 'streamx-maven-public-releases=https:://europe-west1-maven.pkg.dev/streamx-releases/streamx-maven-public-releases/' --repos 'mavencentral' dev.streamx.githhub:streamx-connector-github:1.0.0
       shell: bash
       env:
         JSON_INPUTS: ${{ toJSON(inputs) }}
-        SNAPSHOT_ARTIFACTORY_TOKEN: ${{ inputs.snapshot-artifactory-token }}
