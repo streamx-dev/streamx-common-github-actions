@@ -54,6 +54,7 @@ runs:
     - name: Configure java
       run: |
         jbang jdk install 21 ${{env.JAVA_HOME_21_X64}}
+      shell: bash
 
     - name: Run the action
       id: action
