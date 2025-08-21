@@ -45,9 +45,8 @@ runs:
     - name: Setup Java
         uses: actions/setup-java@v3
         with:
+          java-version: '21'
           cache: 'maven'
-          java-version: |
-            21
 
     - name: Set up JBang
       uses: jbangdev/setup-jbang@main
