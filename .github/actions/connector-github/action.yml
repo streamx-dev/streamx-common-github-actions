@@ -42,8 +42,19 @@ runs:
   using: "composite"
   steps:
 
+    - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          cache: 'maven'
+          java-version: |
+            21
+
     - name: Set up JBang
       uses: jbangdev/setup-jbang@main
+
+    - name: Configure java
+      run: |
+        jbang jdk install 21 ${{env.JAVA_HOME_21_X64}}
 
     - name: Run the action
       id: action
