@@ -65,8 +65,27 @@ runs:
         EOF
         fi
 
+    - name: Setup Java
+      uses: actions/setup-java@v3
+      with:
+        java-version: '21'
+        distribution: 'adopt'
+
+    - name: Setup M2 cache
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-maven-${{ hashFiles('.jbang/cache/dependency_cache.json') }}
+        restore-keys: |
+          ${{ runner.os }}-maven-
+
     - name: Set up JBang
       uses: jbangdev/setup-jbang@main
+
+    - name: Configure java
+      run: |
+        jbang jdk install 21 ${{env.JAVA_HOME_21_X64}}
+      shell: bash
 
     - name: Run the action
       id: action
@@ -76,7 +95,7 @@ runs:
           echo $'Event Inputs:\n${{ toJSON(github.event.inputs) }}'
           export JDK_JAVA_OPTIONS="-Dquarkus.profile=debug"
         fi
-        jbang --java 21 --fresh --repos 'streamx-maven-public-releases=https://europe-west1-maven.pkg.dev/streamx-releases/streamx-maven-public-releases/' --repos 'mavencentral' --repos 'streamx-maven-snapshots=https://europe-west1-maven.pkg.dev/streamx-releases/streamx-maven-snapshots/' dev.streamx:streamx-connector-github:1.0.1-SNAPSHOT
+        jbang --java 21 --fresh --repos 'streamx-maven-public-releases=https://europe-west1-maven.pkg.dev/streamx-releases/streamx-maven-public-releases/' --repos 'mavencentral' --repos 'streamx-maven-snapshots=https://europe-west1-maven.pkg.dev/streamx-releases/streamx-maven-snapshots/' dev.streamx:streamx-connector-github:1.0.2-SNAPSHOT
       shell: bash
       env:
         JSON_INPUTS: ${{ toJSON(inputs) }}

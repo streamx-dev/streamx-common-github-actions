@@ -228,3 +228,35 @@ on:
           streamx-ingestion-url: ${{ vars.STREAMX_INGESTION_URL }}        
           
 ```
+
+### Enable dependency cache on GitHub workflows
+
+Optimize your GitHub Actions workflow by caching dependencies. This simple step delivers 
+significant performance gains, reducing execution time from minutes to seconds by avoiding
+repeated downloads. This is especially impactful for build processes with numerous or large
+dependencies.
+
+Before the JBang execution add these steps.
+```
+    - name: Setup Java
+      uses: actions/setup-java@v3
+      with:
+        java-version: '21'
+        distribution: 'adopt'
+
+    - name: Setup M2 cache
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-maven-${{ hashFiles('.jbang/cache/dependency_cache.json') }}
+        restore-keys: |
+          ${{ runner.os }}-maven-
+
+    - name: Set up JBang
+      uses: jbangdev/setup-jbang@main
+
+    - name: Configure java
+      run: |
+        jbang jdk install 21 ${{env.JAVA_HOME_21_X64}}
+      shell: bash
+```
